@@ -39,7 +39,7 @@
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
-(defcustom notmuch-notify-refresh-interval 3600
+(defcustom notmuch-notify-refresh-interval 600
   "Send a notification every given seconds."
   :type 'number
   :group 'notmuch-notify
@@ -75,7 +75,7 @@
   "Notify notmuch new mails arrival with the system notification feature."
   (let* ((new-count (string-to-number
 		     (car (process-lines notmuch-command "count"))))
-	 (diff-count 1)
+	 (diff-count (- new-count notmuch-notify-refresh-count))
 	 (title notmuch-notify-title)
 	 (info (format "%s more messages since last refresh" (notmuch-hello-nice-number diff-count)))
 	 (program "notify-send")
@@ -87,19 +87,27 @@
 	   (setq notmuch-notify-refresh-count new-count)))))
 
 (defun notmuch-notify-set-refresh-timer ()
+  "Set notmuch notification timer."
   (interactive)
+  ;; kill the timer whenever the interval is updated.
+  (when (and notmuch-notify-timer
+		 (not (= notmuch-notify-refresh-interval
+			 (aref notmuch-notify-timer 4))))
+    (notmuch-notify-cancel-refresh-timer))
   (unless notmuch-notify-timer
     (setq notmuch-notify-timer
 	  (run-at-time nil
 		       notmuch-notify-refresh-interval 
 		       #'notmuch-notify-send-notification))
-    (message "notmuch-notify set timer %s" notmuch-notify-timer)))
+    (message "notmuch-notify set timer %s." notmuch-notify-timer)))
 
 (defun notmuch-notify-cancel-refresh-timer ()
+  "Cancel notmuch notification timer."
   (interactive)
-  (cond ((not notmuch-notify-timer) (message "notmuch-notify is not running any timer!"))
+  (cond ((not notmuch-notify-timer)
+	 (message "notmuch-notify is not running any timer!"))
 	(notmuch-notify-timer
-	 (message "notmuch-notify canceled timer %s" notmuch-notify-timer)
+	 (message "notmuch-notify canceled timer %s." notmuch-notify-timer)
 	 (cancel-timer notmuch-notify-timer)
 	 (setq notmuch-notify-timer nil))))
 
