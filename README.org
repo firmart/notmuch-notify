@@ -25,7 +25,8 @@ other OS support).
 #+end_src
 
 ** Todo
-Add alarm sound.
+- Add alarm sound.
+- Tags exclusion (useful for mailing list etc.).
 
 ** Contribution
 Issues and PRs are welcomed.
