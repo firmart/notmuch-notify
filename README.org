@@ -15,7 +15,7 @@ other OS support).
   :ensure t
   :quelpa (notmuch-notify :fetcher github :repo "firmart/notmuch-notify")
   :config
-  ;; Configuration default values.
+  ;; Default configuration.
   (setq notmuch-notify-title "Notmuch: new message"
 	notmuch-notify-notification-urgency "normal" ;; low, normal, critical
 	notmuch-notify-refresh-interval 600))
