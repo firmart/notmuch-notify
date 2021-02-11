@@ -1,0 +1,25 @@
+* notmuch-notify
+
+Notification for notmuch new email arrival.
+
+*Feature*:
+- System notification upon new email arrival (only GNU/Linux for now, raise an issue if you need
+other OS support).
+- Message about the change of the number of messages whenever =notmuch-hello= is
+  refreshed.
+  
+** Installation with quelpa-use-package
+
+#+begin_src emacs-lisp
+(use-package notmuch-notify 
+  :ensure t
+  :quelpa (notmuch-notify :fetcher github :repo "firmart/notmuch-notify")
+  :config
+  ;; Configuration default values.
+  (setq notmuch-notify-title "Notmuch: new message"
+	notmuch-notify-notification-urgency "normal" ;; low, normal, critical
+	notmuch-notify-refresh-interval 600))
+#+end_src
+
+** Acknowledgement
+- [[https://notmuchmail.org/emacstips/#index19h2][Notmuch: Emacs tips]] for the status refresh function.
