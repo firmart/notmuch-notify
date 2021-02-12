@@ -12,6 +12,8 @@ other OS support).
 - [[https://manpages.debian.org/stretch/libnotify-bin/notify-send.1.en.html][notify-send]] (GNU/Linux)
 
 ** Installation with quelpa-use-package
+The following configuration relies on [[https://github.com/quelpa/quelpa-use-package][quelpa-use-package]], but it is
+straightforward to clone this repo locally and use =use-package= instead.
 
 #+begin_src emacs-lisp
 (use-package notmuch-notify
