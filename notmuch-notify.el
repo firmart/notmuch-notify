@@ -59,6 +59,14 @@ Useful to not be disturbed by active mailing list."
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
+(defcustom notmuch-notify-icon (expand-file-name "notmuch-logo.png" ".")
+  "Icon associated to system-wise notification upon new email arrival.
+
+The path should be absolute."
+  :type 'string
+  :group 'notmuch-notify
+  :package-version '(notmuch-notify . "0.1"))
+
 (defvar notmuch-notify-timer nil)
 (defvar notmuch-notify-refresh-count 0)
 (defvar notmuch-notify-refresh-timestamp nil)
@@ -112,11 +120,10 @@ Useful to not be disturbed by active mailing list."
   "Notify notmuch new mails arrival with the system notification feature."
   (let* ((new-count (notmuch-notify--count))
 	 (diff-count (- new-count notmuch-notify-refresh-count))
-	 (info (format "%s more%smessages since last refresh"
-		       (notmuch-hello-nice-number diff-count)
-		       (if notmuch-notify-excluded-tags " filtered " " ")))
+	 (info (format "%s new messages since last refresh"
+		       (notmuch-hello-nice-number diff-count)))
 	 (program "notify-send")
-         (args (list "-u" "normal" notmuch-notify-title info)))
+         (args (list "-u" "normal" "-i" notmuch-notify-icon notmuch-notify-title info)))
     (cond ((= new-count 0) ;; init counting
 	   (notmuch-notify--update new-count))
 	  ((and (> diff-count 0)

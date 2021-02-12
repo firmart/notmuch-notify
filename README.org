@@ -34,6 +34,7 @@ straightforward to clone this repo locally and use =use-package= instead.
 ** Todo
 - Add alarm sound.
 - Allow different urgency for different tag.
+- Display new email title.
 
 ** Contribution
 Issues and PRs are welcomed.
