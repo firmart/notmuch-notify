@@ -39,6 +39,14 @@
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
+(defcustom notmuch-notify-excluded-tags nil
+  "Tags to exclude when counting new emails.
+
+Useful to not be disturbed by active mailing list."
+  :type '(repeat string)
+  :group 'notmuch-notify
+  :package-version '(notmuch-notify . "0.1"))
+
 (defcustom notmuch-notify-refresh-interval 600
   "Send a notification every given seconds."
   :type 'number
@@ -53,11 +61,11 @@
 
 (defvar notmuch-notify-timer nil)
 (defvar notmuch-notify-refresh-count 0)
+(defvar notmuch-notify-refresh-timestamp nil)
 
 (defun notmuch-notify-hello-refresh-status-message ()
   "Show the number of new mails after refresh."
-  (let* ((new-count (string-to-number
-		     (car (process-lines notmuch-command "count"))))
+  (let* ((new-count (notmuch-notify--count))
 	 (diff-count (- new-count notmuch-notify-refresh-count)))
     (cond
      ((= notmuch-notify-refresh-count 0)
@@ -69,35 +77,68 @@
      ((< diff-count 0)
       (message "You have %s fewer messages since last refresh."
 	       (notmuch-hello-nice-number (- diff-count)))))
-    (setq notmuch-notify-refresh-count new-count)))
+    (notmuch-notify--update new-count)))
+
+(defun notmuch-notify--count (&optional since-timestamp excluded-tags)
+  "Count emails SINCE-TIMESTAMP with EXCLUDED-TAGS.
+
+- Called without argument, runs \"notmuch count\"
+- Called with SINCE-TIMESTAMP, runs \"notmuch count date:@SINCE-TIMESTAMP..@ts-now\"
+- Called with both arguments, runs
+\"notmuch count date:@SINCE-TIMESTAMP..@ts-now and not (tag:tag1 or ... or tag:tagN)\"
+"
+  (let* ((date (when since-timestamp
+		 (format "date:@%s..@%s"
+			 since-timestamp
+			 (format-time-string "%s" (current-time)))))
+	 (tags (when excluded-tags
+		 (concat "not ("
+			 (string-join
+			  (mapcar
+			   (lambda (s) (concat "tag:" s)) excluded-tags)
+			  " or ")
+			 ")")))
+	 (args (list "count"
+		     (string-join (remove nil (list date tags)) " and "))))
+    (string-to-number
+     (car (apply #'process-lines notmuch-command args)))))
+
+(defun notmuch-notify--update (new-count)
+  "Update refresh counting and timestamp."
+  (setq notmuch-notify-refresh-count new-count)
+  (setq notmuch-notify-refresh-timestamp (format-time-string "%s" (current-time))))
 
 (defun notmuch-notify-send-notification ()
   "Notify notmuch new mails arrival with the system notification feature."
-  (let* ((new-count (string-to-number
-		     (car (process-lines notmuch-command "count"))))
+  (let* ((new-count (notmuch-notify--count))
 	 (diff-count (- new-count notmuch-notify-refresh-count))
-	 (title notmuch-notify-title)
-	 (info (format "%s more messages since last refresh" (notmuch-hello-nice-number diff-count)))
+	 (info (format "%s more%smessages since last refresh"
+		       (notmuch-hello-nice-number diff-count)
+		       (if notmuch-notify-excluded-tags " filtered " " ")))
 	 (program "notify-send")
-         (args (list "-u" "normal" title info)))
-    (cond ((= new-count 0) (setq notmuch-notify-refresh-count new-count))
-	  ((and (> diff-count 0) 
+         (args (list "-u" "normal" notmuch-notify-title info)))
+    (cond ((= new-count 0) ;; init counting
+	   (notmuch-notify--update new-count))
+	  ((and (> diff-count 0)
 		(executable-find program))
-	   (apply 'start-process (append (list title nil program) args))
-	   (setq notmuch-notify-refresh-count new-count)))))
+	   (if notmuch-notify-excluded-tags
+	       (when (> (notmuch-notify--count notmuch-notify-refresh-timestamp notmuch-notify-excluded-tags) 0)
+		 (apply 'start-process (append (list notmuch-notify-title nil program) args)))
+	     (apply 'start-process (append (list notmuch-notify-title nil program) args)))
+	   (notmuch-notify--update new-count)))))
 
 (defun notmuch-notify-set-refresh-timer ()
   "Set notmuch notification timer."
   (interactive)
   ;; kill the timer whenever the interval is updated.
   (when (and notmuch-notify-timer
-		 (not (= notmuch-notify-refresh-interval
-			 (aref notmuch-notify-timer 4))))
+	     (not (= notmuch-notify-refresh-interval
+		     (aref notmuch-notify-timer 4))))
     (notmuch-notify-cancel-refresh-timer))
   (unless notmuch-notify-timer
     (setq notmuch-notify-timer
 	  (run-at-time nil
-		       notmuch-notify-refresh-interval 
+		       notmuch-notify-refresh-interval
 		       #'notmuch-notify-send-notification))
     (message "notmuch-notify set timer %s." notmuch-notify-timer)))
 
