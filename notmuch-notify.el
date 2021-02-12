@@ -40,21 +40,21 @@
   :package-version '(notmuch-notify . "0.1"))
 
 (defcustom notmuch-notify-excluded-tags nil
-  "Tags to exclude when counting new emails.
+  "List of tags that will not trigger system-wise notification.
 
 Useful to not be disturbed by active mailing list."
   :type '(repeat string)
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
-(defcustom notmuch-notify-refresh-interval 600
-  "Send a notification every given seconds."
+(defcustom notmuch-notify-refresh-interval 60
+  "Send a system-wise notification every given seconds."
   :type 'number
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
 (defcustom notmuch-notify-title "Notmuch: new message"
-  "Notification title for new email arrival."
+  "Title for system-wise notification upon new email arrival."
   :type 'string
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
