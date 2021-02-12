@@ -24,7 +24,7 @@ other OS support).
   (setq notmuch-notify-title "Notmuch: new message"
 	notmuch-notify-notification-urgency "normal" ;; low, normal, critical
 	notmuch-notify-refresh-interval 600 ;; refresh interval in seconds
-	notmuch-notify-excluded-tags nil) ;; list of tag(s) that will not trigger system-wide notification
+	notmuch-notify-excluded-tags nil) ;; list of tag(s) that will not trigger system-wise notification
   ;; (Recommended) activate system-wise notification timer
   (notmuch-notify-set-refresh-timer))
 #+end_src
