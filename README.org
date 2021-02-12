@@ -31,7 +31,7 @@ other OS support).
 
 ** Todo
 - Add alarm sound.
-- Tags exclusion (useful for mailing list etc.).
+- Allow different urgency for different tag.
 
 ** Contribution
 Issues and PRs are welcomed.
