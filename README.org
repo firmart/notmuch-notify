@@ -17,16 +17,16 @@ other OS support).
 (use-package notmuch-notify
   :ensure t
   :quelpa (notmuch-notify :fetcher github :repo "firmart/notmuch-notify")
+  ;; (Recommended) activate stats message when refreshing notmuch-hello buffer
+  :hook (notmuch-hello-refresh . notmuch-notify-hello-refresh-status-message)
   :config
   ;; Default configuration.
   (setq notmuch-notify-title "Notmuch: new message"
 	notmuch-notify-notification-urgency "normal" ;; low, normal, critical
-	notmuch-notify-refresh-interval 600)
-  ;; Recommended configuration
-  ;; -- activate system-wise notification timer
-  (notmuch-notify-set-refresh-timer)
-  ;; -- activate stats message when refreshing notmuch-hello buffer
-  (add-hook 'notmuch-hello-refresh-hook #'notmuch-notify-hello-refresh-status-message))
+	notmuch-notify-refresh-interval 600 ;; refresh interval in seconds
+	notmuch-notify-excluded-tags nil) ;; list of tag(s) that will not trigger system-wide notification
+  ;; (Recommended) activate system-wise notification timer
+  (notmuch-notify-set-refresh-timer))
 #+end_src
 
 ** Todo
