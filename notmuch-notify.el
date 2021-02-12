@@ -25,6 +25,10 @@
 
 (require 'notmuch)
 
+
+;;; Commentary:
+;; 
+
 ;;; Code:
 (defgroup notmuch-notify nil
   "Notmuch notification"
@@ -32,7 +36,7 @@
   :package-version '(notmuch-notify . "0.1"))
 
 (defcustom notmuch-notify-notification-urgency "normal"
-  "The urgency of new email notification. Accepted value: low, normal, critical"
+  "The urgency of new email notification.  Accepted value: low, normal, critical."
   :type '(radio (const :tag "low" :value "low")
 		(const :tag "normal" :value "normal")
 		(const :tag "critical" :value "critical"))
@@ -91,10 +95,10 @@ The path must be absolute."
   "Count emails SINCE-TIMESTAMP with EXCLUDED-TAGS.
 
 - Called without argument, runs \"notmuch count\"
-- Called with SINCE-TIMESTAMP, runs \"notmuch count date:@SINCE-TIMESTAMP..@ts-now\"
-- Called with both arguments, runs
-\"notmuch count date:@SINCE-TIMESTAMP..@ts-now and not (tag:tag1 or ... or tag:tagN)\"
-"
+- Called with SINCE-TIMESTAMP, runs \"notmuch count
+  date:@SINCE-TIMESTAMP..@ts-now\"
+- Called with both arguments, runs \"notmuch count
+  date:@SINCE-TIMESTAMP..@ts-now and not (tag:tag1 or ... or tag:tagN)\""
   (let* ((date (when since-timestamp
 		 (format "date:@%s..@%s"
 			 since-timestamp
@@ -112,7 +116,7 @@ The path must be absolute."
      (car (apply #'process-lines notmuch-command args)))))
 
 (defun notmuch-notify--update (new-count)
-  "Update refresh counting and timestamp."
+  "Update refresh counting by NEW-COUNT and timestamp."
   (setq notmuch-notify-refresh-count new-count)
   (setq notmuch-notify-refresh-timestamp (format-time-string "%s" (current-time))))
 
