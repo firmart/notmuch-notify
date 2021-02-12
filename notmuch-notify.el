@@ -152,8 +152,5 @@ Useful to not be disturbed by active mailing list."
 	 (cancel-timer notmuch-notify-timer)
 	 (setq notmuch-notify-timer nil))))
 
-(notmuch-notify-set-refresh-timer)
-(add-hook 'notmuch-hello-refresh-hook #'notmuch-notify-hello-refresh-status-message)
-
 (provide 'notmuch-notify)
 ;;; notmuch-notify ends here

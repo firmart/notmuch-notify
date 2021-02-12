@@ -21,7 +21,12 @@ other OS support).
   ;; Default configuration.
   (setq notmuch-notify-title "Notmuch: new message"
 	notmuch-notify-notification-urgency "normal" ;; low, normal, critical
-	notmuch-notify-refresh-interval 600))
+	notmuch-notify-refresh-interval 600)
+  ;; Recommended configuration
+  ;; -- activate system-wise notification timer
+  (notmuch-notify-set-refresh-timer)
+  ;; -- activate stats message when refreshing notmuch-hello buffer
+  (add-hook 'notmuch-hello-refresh-hook #'notmuch-notify-hello-refresh-status-message))
 #+end_src
 
 ** Todo
