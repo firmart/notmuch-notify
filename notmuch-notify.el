@@ -27,7 +27,7 @@
 
 
 ;;; Commentary:
-;; 
+;;
 
 ;;; Code:
 (defgroup notmuch-notify nil
@@ -67,6 +67,22 @@ Useful to not be disturbed by active mailing list."
   "Path of the icon associated to system-wise notification.
 
 The path must be absolute."
+  :type 'file
+  :group 'notmuch-notify
+  :package-version '(notmuch-notify . "0.1"))
+
+(defcustom notmuch-notify-audio (expand-file-name "emailreceived.wav" ".")
+  "Path of the audio associated to system-wise notification.
+
+The path must be absolute."
+  :type 'file
+  :group 'notmuch-notify
+  :package-version '(notmuch-notify . "0.1"))
+
+(defcustom notmuch-notify-audio-program "mpv"
+  "Program to play `notmuch-notify-audio'.
+
+E.g. mpv, cvlc, etc."
   :type 'string
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
@@ -127,16 +143,21 @@ The path must be absolute."
 	 (info (format "%s new messages since last refresh"
 		       (notmuch-hello-nice-number diff-count)))
 	 (program "notify-send")
-         (args (list "-u" "normal" "-i" notmuch-notify-icon notmuch-notify-title info)))
-    (cond ((= new-count 0) ;; init counting
-	   (notmuch-notify--update new-count))
-	  ((and (> diff-count 0)
-		(executable-find program))
-	   (if notmuch-notify-excluded-tags
-	       (when (> (notmuch-notify--count notmuch-notify-refresh-timestamp notmuch-notify-excluded-tags) 0)
-		 (apply 'start-process (append (list notmuch-notify-title nil program) args)))
-	     (apply 'start-process (append (list notmuch-notify-title nil program) args)))
-	   (notmuch-notify--update new-count)))))
+         (args (list "-u" "normal" "-i" notmuch-notify-icon notmuch-notify-title info))
+	 (ready (and (not (= new-count 0)) ;; already initialized
+		     (> diff-count 0) ;; there are new email
+		     (executable-find program)
+		     ;; whether or not we exclude some tags
+		     (or (not notmuch-notify-excluded-tags)
+			 (and notmuch-notify-excluded-tags
+			      (> (notmuch-notify--count
+				  notmuch-notify-refresh-timestamp
+				  notmuch-notify-excluded-tags)
+				 0))))))
+    (when ready
+      (apply 'start-process (append (list notmuch-notify-title nil program) args))
+      (start-process "notmuch-notify" nil notmuch-notify-audio-program notmuch-notify-audio))
+    (notmuch-notify--update new-count)))
 
 (defun notmuch-notify-set-refresh-timer ()
   "Set notmuch notification timer."
