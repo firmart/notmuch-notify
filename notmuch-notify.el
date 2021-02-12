@@ -54,15 +54,15 @@ Useful to not be disturbed by active mailing list."
   :package-version '(notmuch-notify . "0.1"))
 
 (defcustom notmuch-notify-title "Notmuch: new message"
-  "Title for system-wise notification upon new email arrival."
+  "Title for system-wise notification."
   :type 'string
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
 (defcustom notmuch-notify-icon (expand-file-name "notmuch-logo.png" ".")
-  "Icon associated to system-wise notification upon new email arrival.
+  "Path of the icon associated to system-wise notification.
 
-The path should be absolute."
+The path must be absolute."
   :type 'string
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
