@@ -1,19 +1,17 @@
 * notmuch-notify
 
-Notification for notmuch new email arrival.
+Notification for notmuch upon new email arrival.
 
-*Feature*:
-- System notification upon new email arrival (only GNU/Linux for now, raise an issue if you need
-other OS support).
+*Features*:
+- Notification and sound effect upon new email arrival.
 - Message about the change of the number of messages whenever =notmuch-hello= is
   refreshed.
 
-** Requirement
-- [[https://manpages.debian.org/stretch/libnotify-bin/notify-send.1.en.html][notify-send]] (GNU/Linux)
-
-** Installation with quelpa-use-package
+** Installation & Configuration
 The following configuration relies on [[https://github.com/quelpa/quelpa-use-package][quelpa-use-package]], but it is
 straightforward to clone this repo locally and use =use-package= instead.
+Moreover, this package uses =alert= as notification backend. See [[https://github.com/jwiegley/alert][jwiegley/alert]]
+for options to fine-tune notifications (/e.g./ =alert-default-style=).
 
 #+begin_src emacs-lisp
 (use-package notmuch-notify
@@ -22,19 +20,23 @@ straightforward to clone this repo locally and use =use-package= instead.
   ;; (Recommended) activate stats message when refreshing notmuch-hello buffer
   :hook (notmuch-hello-refresh . notmuch-notify-hello-refresh-status-message)
   :config
-  ;; Default configuration.
-  (setq notmuch-notify-title "Notmuch: new message"
-	notmuch-notify-notification-urgency "normal" ;; low, normal, critical
-	notmuch-notify-refresh-interval 60 ;; refresh interval in seconds
-	notmuch-notify-excluded-tags nil) ;; list of tag(s) that will not trigger system-wise notification
   ;; (Recommended) activate system-wise notification timer
-  (notmuch-notify-set-refresh-timer))
+  (notmuch-notify-set-refresh-timer)
+  ;; Default configuration.
+  (setq notmuch-notify-alert-severity 'normal ;; 'trivial, 'low, 'normal, 'moderate, 'high, 'urgent
+	notmuch-notify-alert-title "Notmuch: new message"
+	;; absolute path for alert icon & audio file
+	notmuch-notify-alert-icon (expand-file-name "notmuch-logo.png" ".")
+	notmuch-notify-alert-audio-file (expand-file-name "emailreceived.wav" ".")
+	notmuch-notify-alert-audio-program "mpv"
+	notmuch-notify-excluded-tags nil ;; list of tag(s) that will not trigger alert
+	notmuch-notify-refresh-interval 60) ;; refresh interval in seconds
+  )
 #+end_src
 
 ** Todo
-- Add alarm sound.
-- Allow different urgency for different tag.
-- Display new email title.
+- Allow different severity/logo/sound for different tag/address/content.
+- Display new email title in the alert.
 
 ** Contribution
 Issues and PRs are welcomed.

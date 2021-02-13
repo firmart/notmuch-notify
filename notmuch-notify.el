@@ -36,19 +36,21 @@
   :package-version '(notmuch-notify . "0.1"))
 
 (defcustom notmuch-notify-alert-severity 'normal
-  "The urgency of new email notification.  Accepted value: low, normal, critical."
+  "The severity level of the alert emitted upon new email notification.
+
+Accepted value: trivial, low, normal, moderate, high, urgent."
   :type 'symbol
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
 (defcustom notmuch-notify-alert-title "Notmuch: new message"
-  "Title for system-wise notification."
+  "Title of the alert emitted upon new email notification."
   :type 'string
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
 (defcustom notmuch-notify-alert-icon (expand-file-name "notmuch-logo.png" ".")
-  "Path of the icon associated to system-wise notification.
+  "Path of the icon associated to the alert emitted upon new email notification.
 
 The path must be absolute."
   :type 'file
@@ -56,7 +58,7 @@ The path must be absolute."
   :package-version '(notmuch-notify . "0.1"))
 
 (defcustom notmuch-notify-alert-audio-file (expand-file-name "emailreceived.wav" ".")
-  "Path of the audio associated to system-wise notification.
+  "Path of the audio associated to the alert emitted upon new email notification.
 
 The path must be absolute."
   :type 'file
@@ -134,7 +136,7 @@ Useful to not be disturbed by active mailing list."
   (setq notmuch-notify-refresh-count new-count)
   (setq notmuch-notify-refresh-timestamp (format-time-string "%s" (current-time))))
 
-(defun notmuch-notify-send-notification ()
+(defun notmuch-notify-send-alert ()
   "Notify notmuch new mails arrival with the system notification feature."
   (let* ((new-count (notmuch-notify--count))
 	 (diff-count (- new-count notmuch-notify-refresh-count))
@@ -173,7 +175,7 @@ Useful to not be disturbed by active mailing list."
     (setq notmuch-notify-timer
 	  (run-at-time nil
 		       notmuch-notify-refresh-interval
-		       #'notmuch-notify-send-notification))
+		       #'notmuch-notify-send-alert))
     (message "notmuch-notify set timer %s." notmuch-notify-timer)))
 
 (defun notmuch-notify-cancel-refresh-timer ()
