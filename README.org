@@ -22,7 +22,7 @@ for options to fine-tune notifications (/e.g./ =alert-default-style=).
   :config
   ;; (Recommended) activate system-wise notification timer
   (notmuch-notify-set-refresh-timer)
-  ;; Default configuration.
+  ;; Default configurations
   (setq notmuch-notify-alert-severity 'normal ;; 'trivial, 'low, 'normal, 'moderate, 'high, 'urgent
 	notmuch-notify-alert-title "Notmuch: new message"
 	;; absolute path for alert icon & audio file
@@ -44,3 +44,4 @@ Issues and PRs are welcomed.
 ** Acknowledgement
 - [[https://notmuchmail.org/emacstips/#index19h2][Notmuch: Emacs tips]] for the status refresh function.
 - System notification inspired from [[https://github.com/wlemuel/alarm-clock][wlemuel/alarm-clock]].
+- Default sound effect (=receivedemail.wav=) comes from [[https://freesound.org/people/Jrcard/sounds/421924/][Freesound]] (CC0).
