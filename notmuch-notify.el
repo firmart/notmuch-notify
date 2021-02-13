@@ -7,7 +7,7 @@
 ;; Version: 0.1
 ;; Keywords: convenience, notification
 ;; URL: https://www.github.com/firmart/notmuch-notify
-;; Package-Requires: ((emacs "25.1") notmuch)
+;; Package-Requires: ((emacs "25.1") (alert "1.2") notmuch)
 
 
 ;; This program is free software: you can redistribute it and/or
@@ -24,7 +24,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (require 'notmuch)
-
+(require 'alert)
 
 ;;; Commentary:
 ;;
@@ -35,11 +35,39 @@
   :group 'notmuch
   :package-version '(notmuch-notify . "0.1"))
 
-(defcustom notmuch-notify-notification-urgency "normal"
+(defcustom notmuch-notify-alert-severity 'normal
   "The urgency of new email notification.  Accepted value: low, normal, critical."
-  :type '(radio (const :tag "low" :value "low")
-		(const :tag "normal" :value "normal")
-		(const :tag "critical" :value "critical"))
+  :type 'symbol
+  :group 'notmuch-notify
+  :package-version '(notmuch-notify . "0.1"))
+
+(defcustom notmuch-notify-alert-title "Notmuch: new message"
+  "Title for system-wise notification."
+  :type 'string
+  :group 'notmuch-notify
+  :package-version '(notmuch-notify . "0.1"))
+
+(defcustom notmuch-notify-alert-icon (expand-file-name "notmuch-logo.png" ".")
+  "Path of the icon associated to system-wise notification.
+
+The path must be absolute."
+  :type 'file
+  :group 'notmuch-notify
+  :package-version '(notmuch-notify . "0.1"))
+
+(defcustom notmuch-notify-alert-audio-file (expand-file-name "emailreceived.wav" ".")
+  "Path of the audio associated to system-wise notification.
+
+The path must be absolute."
+  :type 'file
+  :group 'notmuch-notify
+  :package-version '(notmuch-notify . "0.1"))
+
+(defcustom notmuch-notify-alert-audio-program "mpv"
+  "Program to play `notmuch-notify-alert-audio-file'.
+
+E.g. mpv, cvlc, etc."
+  :type 'string
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
@@ -54,36 +82,6 @@ Useful to not be disturbed by active mailing list."
 (defcustom notmuch-notify-refresh-interval 60
   "Send a system-wise notification every given seconds."
   :type 'number
-  :group 'notmuch-notify
-  :package-version '(notmuch-notify . "0.1"))
-
-(defcustom notmuch-notify-title "Notmuch: new message"
-  "Title for system-wise notification."
-  :type 'string
-  :group 'notmuch-notify
-  :package-version '(notmuch-notify . "0.1"))
-
-(defcustom notmuch-notify-icon (expand-file-name "notmuch-logo.png" ".")
-  "Path of the icon associated to system-wise notification.
-
-The path must be absolute."
-  :type 'file
-  :group 'notmuch-notify
-  :package-version '(notmuch-notify . "0.1"))
-
-(defcustom notmuch-notify-audio (expand-file-name "emailreceived.wav" ".")
-  "Path of the audio associated to system-wise notification.
-
-The path must be absolute."
-  :type 'file
-  :group 'notmuch-notify
-  :package-version '(notmuch-notify . "0.1"))
-
-(defcustom notmuch-notify-audio-program "mpv"
-  "Program to play `notmuch-notify-audio'.
-
-E.g. mpv, cvlc, etc."
-  :type 'string
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
@@ -142,11 +140,8 @@ E.g. mpv, cvlc, etc."
 	 (diff-count (- new-count notmuch-notify-refresh-count))
 	 (info (format "%s new messages since last refresh"
 		       (notmuch-hello-nice-number diff-count)))
-	 (program "notify-send")
-         (args (list "-u" "normal" "-i" notmuch-notify-icon notmuch-notify-title info))
 	 (ready (and (not (= new-count 0)) ;; already initialized
 		     (> diff-count 0) ;; there are new email
-		     (executable-find program)
 		     ;; whether or not we exclude some tags
 		     (or (not notmuch-notify-excluded-tags)
 			 (and notmuch-notify-excluded-tags
@@ -155,8 +150,15 @@ E.g. mpv, cvlc, etc."
 				  notmuch-notify-excluded-tags)
 				 0))))))
     (when ready
-      (apply 'start-process (append (list notmuch-notify-title nil program) args))
-      (start-process "notmuch-notify" nil notmuch-notify-audio-program notmuch-notify-audio))
+      (alert info
+	     :severity notmuch-notify-alert-severity
+	     :title notmuch-notify-alert-title
+	     :icon notmuch-notify-alert-icon
+	     :id 'notmuch-notify)
+      (when (and notmuch-notify-alert-audio-program
+		 (file-exists-p notmuch-notify-alert-audio-file))
+	(start-process "notmuch-notify" nil notmuch-notify-alert-audio-program
+		       notmuch-notify-alert-audio-file)))
     (notmuch-notify--update new-count)))
 
 (defun notmuch-notify-set-refresh-timer ()
