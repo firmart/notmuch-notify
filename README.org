@@ -44,4 +44,5 @@ Issues and PRs are welcomed.
 ** Acknowledgement
 - [[https://notmuchmail.org/emacstips/#index19h2][Notmuch: Emacs tips]] for the status refresh function.
 - System notification inspired from [[https://github.com/wlemuel/alarm-clock][wlemuel/alarm-clock]].
-- Default sound effect (=receivedemail.wav=) comes from [[https://freesound.org/people/Jrcard/sounds/421924/][Freesound]] (CC0).
+- Default sound effect (=emailreceived.wav=) comes from [[https://freesound.org/people/Jrcard/sounds/421924/][Freesound]] (CC0).
+- Default icon is [[https://notmuchmail.org/notmuch-logo.png][Notmuch official logo]].
