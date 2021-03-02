@@ -49,7 +49,9 @@ Accepted value: trivial, low, normal, moderate, high, urgent."
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
-(defcustom notmuch-notify-alert-icon (expand-file-name "notmuch-logo.png" ".")
+(defcustom notmuch-notify-alert-icon
+  (expand-file-name "notmuch-logo.png"
+		    (file-name-directory (find-library-name "notmuch-notify")))
   "Path of the icon associated to the alert emitted upon new email notification.
 
 The path must be absolute."
@@ -57,7 +59,9 @@ The path must be absolute."
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
-(defcustom notmuch-notify-alert-audio-file (expand-file-name "emailreceived.wav" ".")
+(defcustom notmuch-notify-alert-audio-file
+  (expand-file-name "emailreceived.wav"
+		    (file-name-directory (find-library-name "notmuch-notify")))
   "Path of the audio associated to the alert emitted upon new email notification.
 
 The path must be absolute."
@@ -74,15 +78,19 @@ E.g. mpv, cvlc, etc."
   :package-version '(notmuch-notify . "0.1"))
 
 (defcustom notmuch-notify-excluded-tags nil
-  "List of tags that will not trigger system-wise notification.
+  "List of tags that doesn't worth to trigger a notification.
 
 Useful to not be disturbed by active mailing list."
   :type '(repeat string)
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
-(defcustom notmuch-notify-refresh-interval 60
-  "Send a system-wise notification every given seconds."
+(defcustom notmuch-notify-refresh-interval 600
+  "The interval in seconds to check if there are new emails.
+
+Warning: the value should not be lower than the interval between
+two runs of the command \"notmuch new\". Otherwise, alert can miss
+some new emails."
   :type 'number
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
@@ -157,12 +165,13 @@ Useful to not be disturbed by active mailing list."
 	     :title notmuch-notify-alert-title
 	     :icon notmuch-notify-alert-icon
 	     :id 'notmuch-notify)
-      (when (and notmuch-notify-alert-audio-program
+      (when (and (executable-find notmuch-notify-alert-audio-program)
 		 (file-exists-p notmuch-notify-alert-audio-file))
 	(start-process "notmuch-notify" nil notmuch-notify-alert-audio-program
 		       notmuch-notify-alert-audio-file)))
     (notmuch-notify--update new-count)))
 
+;; FIXME notmuch-notify-timer may be not nil while no timer is running
 (defun notmuch-notify-set-refresh-timer ()
   "Set notmuch notification timer."
   (interactive)
