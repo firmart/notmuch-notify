@@ -101,7 +101,7 @@ some new emails."
 
 (defun notmuch-notify-hello-refresh-status-message ()
   "Show the number of new mails after refresh."
-  (let* ((new-count (notmuch-notify--count))
+  (let* ((new-count (notmuch-notify--count (notmuch-notify--build-search-term)))
 	 (diff-count (- new-count notmuch-notify-refresh-count)))
     (cond
      ((= notmuch-notify-refresh-count 0)
@@ -115,29 +115,33 @@ some new emails."
 	       (notmuch-hello-nice-number (- diff-count)))))
     (notmuch-notify--update new-count)))
 
-(defun notmuch-notify--count (&optional since-timestamp excluded-tags)
-  "Count emails SINCE-TIMESTAMP with EXCLUDED-TAGS.
+(defun notmuch-notify--build-search-term (&optional since-timestamp excluded-tags)
+  "Build a search term whose the date range is
+date:@SINCE-TIMESTAMP..@timestamp-now and the excluded tags is
+EXCLUDED-TAGS."
+  (let ((date (when since-timestamp
+		(format "date:@%s..@%s"
+			since-timestamp
+			(format-time-string "%s" (current-time)))))
+	(tags (when excluded-tags
+		(concat "not ("
+			(string-join
+			 (mapcar
+			  (lambda (s) (concat "tag:" s)) excluded-tags)
+			 " or ")
+			")"))))
+    (string-join (remove nil (list date tags)) " and ")))
 
-- Called without argument, runs \"notmuch count\"
-- Called with SINCE-TIMESTAMP, runs \"notmuch count
-  date:@SINCE-TIMESTAMP..@ts-now\"
-- Called with both arguments, runs \"notmuch count
-  date:@SINCE-TIMESTAMP..@ts-now and not (tag:tag1 or ... or tag:tagN)\""
-  (let* ((date (when since-timestamp
-		 (format "date:@%s..@%s"
-			 since-timestamp
-			 (format-time-string "%s" (current-time)))))
-	 (tags (when excluded-tags
-		 (concat "not ("
-			 (string-join
-			  (mapcar
-			   (lambda (s) (concat "tag:" s)) excluded-tags)
-			  " or ")
-			 ")")))
-	 (args (list "count"
-		     (string-join (remove nil (list date tags)) " and "))))
-    (string-to-number
-     (car (apply #'process-lines notmuch-command args)))))
+(defun notmuch-notify--query-headers (search-term)
+  "Return the header of emails matching query SEARCH-TERM."
+  (notmuch-query-map-threads
+   (lambda (p) (plist-get p :headers))
+   (notmuch-query-get-threads (list search-term))))
+
+(defun notmuch-notify--count (search-term)
+  "Count emails matching the query SEARCH-TERM."
+  (string-to-number
+   (car (apply #'process-lines notmuch-command (list "count" search-term)))))
 
 (defun notmuch-notify--update (new-count)
   "Update refresh counting by NEW-COUNT and timestamp."
@@ -146,7 +150,7 @@ some new emails."
 
 (defun notmuch-notify-send-alert ()
   "Notify notmuch new mails arrival with the system notification feature."
-  (let* ((new-count (notmuch-notify--count))
+  (let* ((new-count (notmuch-notify--count (notmuch-notify--build-search-term)))
 	 (diff-count (- new-count notmuch-notify-refresh-count))
 	 (info (format "%s new messages since last refresh"
 		       (notmuch-hello-nice-number diff-count)))
@@ -156,9 +160,11 @@ some new emails."
 		     (or (not notmuch-notify-excluded-tags)
 			 (and notmuch-notify-excluded-tags
 			      (> (notmuch-notify--count
-				  notmuch-notify-refresh-timestamp
-				  notmuch-notify-excluded-tags)
+				  (notmuch-notify--build-search-term
+				   notmuch-notify-refresh-timestamp
+				   notmuch-notify-excluded-tags))
 				 0))))))
+
     (when ready
       (alert info
 	     :severity notmuch-notify-alert-severity
