@@ -80,12 +80,12 @@ The path must be absolute."
 	 (group (const :audio) (file :must-match t))))
 
 (defcustom notmuch-notify-alert-profiles
-  '(("default"
-     :search-term nil
-     :severity notmuch-notify-alert-default-severity
-     :title notmuch-notify-alert-default-title
-     :icon notmuch-notify-alert-default-icon
-     :audio notmuch-notify-alert-default-audio))
+  `(,(list :name "Default"
+	   :search-term nil
+	   :severity notmuch-notify-alert-default-severity
+	   :title notmuch-notify-alert-default-title
+	   :icon notmuch-notify-alert-default-icon
+	   :audio notmuch-notify-alert-default-audio))
   "A list of alert profiles.
 
 An alert profile is a property list made with the optional
@@ -112,7 +112,8 @@ fallback to the default value `notmuch-notify-alert-default-*'.
 
 `:title': The `alert' title.
 `:icon': The `alert' icon.
-`:audio': The audio played along with the `alert'."
+`:audio': The audio played along with the `alert'.
+`:name': The name of the alert profile (for debug purpose)."
 
   :type '(repeat notmuch-notify-alert-profile)
   :group 'notmuch-notify
@@ -200,7 +201,7 @@ EXCLUDED-TAGS."
   "Count emails matching the query SEARCH-TERM."
   (let ((default-directory (temporary-file-directory)))
     (string-to-number
-     (car (apply #'process-lines notmuch-command (list "count" search-term))))))
+     (car (apply #'process-lines notmuch-command (remove nil (list "count" search-term)))))))
 
 (defun notmuch-notify--init-hash-table ()
   (unless notmuch-notify-refresh-hash-table
@@ -228,7 +229,6 @@ EXCLUDED-TAGS."
 	 (old-count (or (gethash search-term notmuch-notify-refresh-hash-table) 0))
 	 (new-count (notmuch-notify--count search-term))
 	 (diff-count (- new-count old-count))
-	 ;; FIXME need time frame search-term
 	 (msg (notmuch-notify--build-message
 	       diff-count
 	       (notmuch-notify--build-search-term
@@ -263,13 +263,13 @@ EXCLUDED-TAGS."
 
     ;; If there are multiple nil-search-term profile, keep only one of them
     (when (< 1 (length notmuch-notify-alert-profiles))
-      (setq nil-st-profiles (list (list (car nil-st-profiles)))))
+      (setq nil-st-profiles (list (car nil-st-profiles))))
 
     ;; Move nil-search-term profile to the end
     (dolist (profile (append other-profiles nil-st-profiles))
       (notmuch-notify-send-alert-profile profile acc-exclude-sts)
       ;; Accumulate search terms and exclude them to have mutually exclusive messages sets
-      (setq acc-exclude-sts (append acc-exclude-sts (plist-get profile :search-term))))))
+      (push (plist-get profile :search-term) acc-exclude-sts))))
 
 ;; FIXME notmuch-notify-timer may be not nil while no timer is running
 (defun notmuch-notify-set-refresh-timer ()
