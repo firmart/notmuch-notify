@@ -29,22 +29,24 @@
 
 ;;; Commentary:
 
-;;;   Code:
+;;; Code:
+
 (defgroup notmuch-notify nil
   "Notmuch notification"
   :group 'notmuch
   :package-version '(notmuch-notify . "0.1"))
 
 (defcustom notmuch-notify-alert-default-severity 'normal
-  "The severity level of the alert emitted upon new email notification.
+  "The severity level of the `alert' emitted upon new email arrival.
 
-Accepted value: trivial, low, normal, moderate, high, urgent."
+Accepted value: trivial, low, normal, moderate, high, urgent.
+See `alert' for more information."
   :type 'symbol
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.2"))
 
 (defcustom notmuch-notify-alert-default-title "Notmuch: new message"
-  "Title of the alert emitted upon new email notification."
+  "Title of the `alert' emitted upon new email arrival."
   :type 'string
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.2"))
@@ -52,7 +54,7 @@ Accepted value: trivial, low, normal, moderate, high, urgent."
 (defcustom notmuch-notify-alert-default-icon
   (expand-file-name "notmuch-logo.png"
 		    (file-name-directory (find-library-name "notmuch-notify")))
-  "Path of the icon associated to the alert emitted upon new email notification.
+  "Path of the icon associated to the alert emitted upon new email arrival.
 
 The path must be absolute."
   :type 'file
@@ -62,7 +64,7 @@ The path must be absolute."
 (defcustom notmuch-notify-alert-default-audio
   (expand-file-name "emailreceived.wav"
 		    (file-name-directory (find-library-name "notmuch-notify")))
-  "Path of the audio associated to the alert emitted upon new email notification.
+  "Path of the audio associated to the alert emitted upon new email arrival.
 
 The path must be absolute."
   :type 'file
@@ -72,7 +74,7 @@ The path must be absolute."
 (define-widget 'notmuch-notify-alert-profile 'list
   "A single alert profile."
   :args
-  '(list string
+  '(list (group (const :name) symbol)
 	 (group (const :severity) symbol)
 	 (group (const :search-term) (repeat string))
 	 (group (const :title) string)
@@ -89,21 +91,21 @@ The path must be absolute."
   "A list of alert profiles.
 
 An alert profile is a property list made with the optional
-properties below. It allows to set different alert for different
-messages. If any property is missed, `notmuch-notify' will
+properties below.  It allows to set different alert for different
+messages.  If any property is missed, `notmuch-notify' will
 fallback to the default value `notmuch-notify-alert-default-*'.
 
 `:search-term'
 
   A notmuch search-term to select messages belonging this alert
   profile.  Message having tag in `notmuch-notify-excluded-tags'
-  will be excluded unconditionally. `notmuch-notify' will take
+  will be excluded unconditionally.  `notmuch-notify' will take
   care to not count messages belonging to two different profiles.
-  Especially, if one profile set it to `nil', the profile will
+  Especially, if one profile set it to nil, the profile will
   either take into account all new messages (if it's the only
   profile) or the remaining messages unselected by other
   profiles.  Note that at most one profile could have this
-  property `nil'.
+  property nil (other such profiles will be ignored).
 
 `:severity'
 
@@ -120,7 +122,7 @@ fallback to the default value `notmuch-notify-alert-default-*'.
   :package-version '(notmuch-notify . "0.2"))
 
 (defcustom notmuch-notify-alert-audio-program "mpv"
-  "Program to play `notmuch-notify-alert-default-audio'.
+  "Program to play alert audio.
 
 E.g. mpv, cvlc, etc."
   :type 'string
@@ -130,47 +132,46 @@ E.g. mpv, cvlc, etc."
 (defcustom notmuch-notify-excluded-tags nil
   "List of tags that doesn't worth to trigger a notification.
 
-Useful to not be disturbed by active mailing list."
+Useful to prevent being disturbed by active mailing list."
   :type '(repeat string)
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
-(defcustom notmuch-notify-refresh-interval 600
-  "The interval in seconds to check if there are new emails.
-
-Warning: the value should not be lower than the interval between
-two runs of the command \"notmuch new\". Otherwise, alert can miss
-some new emails."
+(defcustom notmuch-notify-refresh-interval 60
+  "The interval in seconds to check if there are new emails."
   :type 'number
   :group 'notmuch-notify
   :package-version '(notmuch-notify . "0.1"))
 
-(defvar notmuch-notify-timer nil)
-(defvar notmuch-notify-refresh-count 0)
+(defvar notmuch-notify--timer nil "Notmuch notify alert timer.")
 ;; TODO add last visit to notify new mail when emacs is not open
 ;; (defvar notmuch-notify-refresh-timestamp nil)
-(defvar notmuch-notify-refresh-hash-table nil)
+(defvar notmuch-notify--hash-table nil
+  "Notmuch notify hash table.
+- Key is notmuch search term.
+- Value is the last total messages returned by 'notmuch count <search-term>'.")
 
 (defun notmuch-notify-hello-refresh-status-message ()
-  "Show the number of new mails after refresh."
-  (let* ((new-count (notmuch-notify--count))
-	 (diff-count (- new-count notmuch-notify-refresh-count)))
+  "Show the number of new mails after refreshing `notmuch-hello' buffer."
+  (let* ((old-count (or (gethash nil notmuch-notify--hash-table) 0))
+	 (new-count (notmuch-notify--count))
+	 (diff-count (- new-count old-count)))
     (cond
-     ((= notmuch-notify-refresh-count 0)
-      (message "You have %s messages."
-	       (notmuch-hello-nice-number new-count)))
-     ((> diff-count 0)
-      (message "You have %s more messages since last refresh."
-	       (notmuch-hello-nice-number diff-count)))
-     ((< diff-count 0)
-      (message "You have %s fewer messages since last refresh."
-	       (notmuch-hello-nice-number (- diff-count)))))
-    (notmuch-notify--update new-count)))
+     ((= old-count 0)
+      (message "You have %s messages." (notmuch-hello-nice-number new-count)))
+     ((> diff-count 0) (message "You have %s more messages since last refresh."
+				(notmuch-hello-nice-number diff-count)))
+     ((< diff-count 0) (message "You have %s fewer messages since last refresh."
+				(notmuch-hello-nice-number (- diff-count)))))
+    (notmuch-notify--update nil new-count)))
 
 (defun notmuch-notify--build-search-term (&optional main-st excluded-tags excluded-sts ts-since &rest extra-sts)
-  "Build a search term whose the date range is
-date:@SINCE-TIMESTAMP..@timestamp-now and the excluded tags is
-EXCLUDED-TAGS."
+  "Build a notmuch search term composed by:
+- MAIN-ST: the main notmuch search term.
+- EXCLUDED-TAGS: a list of excluded tags.
+- EXCLUDED-STS: a list of excluded search terms.
+- TS-SINCE: a timestamp to make the search term date:@TS-SINCE..<ts-current>.
+- EXTRA-STS: extra search terms."
   (let ((main-st (if (string-empty-p main-st) nil main-st))
 	(excl-tags-str (when excluded-tags
 			 (concat "not ("
@@ -191,7 +192,7 @@ EXCLUDED-TAGS."
     (string-join (remove nil (append (list date main-st excl-tags-str excl-st-str) extra-sts)) " and ")))
 
 (defun notmuch-notify--query-headers (search-term)
-  "Return the header of emails matching query SEARCH-TERM."
+  "Return the header of emails matching the query SEARCH-TERM."
   (let ((default-directory (temporary-file-directory)))
     (notmuch-query-map-threads
      (lambda (p) (plist-get p :headers))
@@ -204,17 +205,19 @@ EXCLUDED-TAGS."
      (car (apply #'process-lines notmuch-command (remove nil (list "count" search-term)))))))
 
 (defun notmuch-notify--init-hash-table ()
-  (unless notmuch-notify-refresh-hash-table
-    (setq notmuch-notify-refresh-hash-table
+  "Initialize `notmuch-notify--hash-table' if it's not the case."
+  (unless notmuch-notify--hash-table
+    (setq notmuch-notify--hash-table
 	  (make-hash-table :size (length notmuch-notify-alert-profiles)
-	  :test 'equal))))
+			   :test 'equal))))
 
 (defun notmuch-notify--update (key new-count)
-  "Update KEY value by NEW-COUNT."
+  "Update `notmuch-notify--hash-table' KEY value by NEW-COUNT."
   (notmuch-notify--init-hash-table)
-  (puthash key new-count notmuch-notify-refresh-hash-table))
+  (puthash key new-count notmuch-notify--hash-table))
 
 (defun notmuch-notify--build-message (new-email-count search-term)
+  "Build an alert message based on NEW-EMAIL-COUNT and a notmuch SEARCH-TERM."
   (let* ((headers (seq-take (notmuch-notify--query-headers search-term) new-email-count))
 	 (subjects (mapcar (lambda (header) (plist-get header :Subject)) headers)))
     (concat
@@ -222,17 +225,26 @@ EXCLUDED-TAGS."
      (string-join subjects "\n"))))
 
 (defun notmuch-notify-send-alert-profile (profile &optional excluded-search-terms)
+  "Send notification for the notmuch alert PROFILE.
+
+Also exclude accumulated search terms EXCLUDED-SEARCH-TERMS
+coming from other profiles so that all alert profiles' messages
+are mutually exclusive, i.e. you won't received two notifications
+for an email matching two different notmuch search terms."
   (let* ((default-directory (temporary-file-directory))
 	 (search-term (notmuch-notify--build-search-term
 		       (plist-get profile :search-term)
 		       notmuch-notify-excluded-tags excluded-search-terms))
-	 (old-count (or (gethash search-term notmuch-notify-refresh-hash-table) 0))
+	 (old-count (or (gethash search-term notmuch-notify--hash-table) 0))
 	 (new-count (notmuch-notify--count search-term))
 	 (diff-count (- new-count old-count))
 	 (msg (notmuch-notify--build-message
 	       diff-count
 	       (notmuch-notify--build-search-term
 		search-term nil nil
+		;; Lower bound search term, as notmuch show required,
+		;; date:@<ts-current - refresh-interval - 10m>..<ts-current>
+		;; to fetch enough messages but not too much.
 		(- (string-to-number (format-time-string "%s" (current-time)))
 		   (+ notmuch-notify-refresh-interval 600)))))
 	 (ready (and (not (= old-count 0)) ;; already initialized
@@ -251,7 +263,7 @@ EXCLUDED-TAGS."
     (notmuch-notify--update search-term new-count)))
 
 (defun notmuch-notify-send-alert ()
-  "Notify notmuch new mails arrival with the system notification feature."
+  "Send notification for all profiles in `notmuch-notify-alert-profiles'."
   (notmuch-notify--init-hash-table)
   (let ((nil-st-profiles) (other-profiles) (acc-exclude-sts))
 
@@ -271,31 +283,31 @@ EXCLUDED-TAGS."
       ;; Accumulate search terms and exclude them to have mutually exclusive messages sets
       (push (plist-get profile :search-term) acc-exclude-sts))))
 
-;; FIXME notmuch-notify-timer may be not nil while no timer is running
+;; FIXME notmuch-notify--timer may be not nil while no timer is running
 (defun notmuch-notify-set-refresh-timer ()
   "Set notmuch notification timer."
   (interactive)
   ;; kill the timer whenever the interval is updated.
-  (when (and notmuch-notify-timer
+  (when (and notmuch-notify--timer
 	     (not (= notmuch-notify-refresh-interval
-		     (aref notmuch-notify-timer 4))))
+		     (aref notmuch-notify--timer 4))))
     (notmuch-notify-cancel-refresh-timer))
-  (unless notmuch-notify-timer
-    (setq notmuch-notify-timer
+  (unless notmuch-notify--timer
+    (setq notmuch-notify--timer
 	  (run-at-time nil
 		       notmuch-notify-refresh-interval
 		       #'notmuch-notify-send-alert))
-    (message "notmuch-notify set timer %s." notmuch-notify-timer)))
+    (message "notmuch-notify set timer %s." notmuch-notify--timer)))
 
 (defun notmuch-notify-cancel-refresh-timer ()
   "Cancel notmuch notification timer."
   (interactive)
-  (cond ((not notmuch-notify-timer)
+  (cond ((not notmuch-notify--timer)
 	 (message "notmuch-notify is not running any timer!"))
-	(notmuch-notify-timer
-	 (message "notmuch-notify canceled timer %s." notmuch-notify-timer)
-	 (cancel-timer notmuch-notify-timer)
-	 (setq notmuch-notify-timer nil))))
+	(notmuch-notify--timer
+	 (message "notmuch-notify canceled timer %s." notmuch-notify--timer)
+	 (cancel-timer notmuch-notify--timer)
+	 (setq notmuch-notify--timer nil))))
 
 (provide 'notmuch-notify)
 ;;; notmuch-notify ends here
