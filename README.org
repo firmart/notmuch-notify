@@ -7,36 +7,43 @@ Notification for notmuch upon new email arrival.
 - Message about the change of the number of messages whenever =notmuch-hello= is
   refreshed.
 
-** Installation & Configuration
+** Installation & Minimal Configuration
 The following configuration relies on [[https://github.com/quelpa/quelpa-use-package][quelpa-use-package]], but it is
 straightforward to clone this repo locally and use =use-package= instead.
 Moreover, this package uses =alert= as notification backend. See [[https://github.com/jwiegley/alert][jwiegley/alert]]
-for options to fine-tune notifications (/e.g./ =alert-default-style=).
+for options to fine-tune notifications (especially =alert-default-style=).
 
+Below is a minimal configuration. Keep reading for more customizations.
 #+begin_src emacs-lisp
 (use-package notmuch-notify
   :ensure t
   :quelpa (notmuch-notify :fetcher github :repo "firmart/notmuch-notify")
-  ;; (Recommended) activate stats message when refreshing notmuch-hello buffer
+  ;; (Recommended) activate stats message when refreshing `notmuch-hello' buffer
   :hook (notmuch-hello-refresh . notmuch-notify-hello-refresh-status-message)
   :config
   ;; (Recommended) activate system-wise notification timer
-  (notmuch-notify-set-refresh-timer)
-  ;; Default configurations
-  (setq notmuch-notify-alert-severity 'normal ;; 'trivial, 'low, 'normal, 'moderate, 'high, 'urgent
-	notmuch-notify-alert-title "Notmuch: new message"
-	;; absolute path for alert icon & audio file
-	notmuch-notify-alert-icon (expand-file-name "notmuch-logo.png" ".")
-	notmuch-notify-alert-audio-file (expand-file-name "emailreceived.wav" ".")
-	notmuch-notify-alert-audio-program "mpv"
-	notmuch-notify-excluded-tags nil ;; list of tag(s) that will not trigger alert
-	notmuch-notify-refresh-interval 60) ;; refresh interval in seconds
-  )
+  (notmuch-notify-set-refresh-timer))
 #+end_src
 
+** Default Configuration
+
+|----------------------------------------------+-----------------------------------------------------+-------------------------------------------------------------------------------------------------------|
+| Variable                                     | Default value                                       | Note                                                                                                  |
+|----------------------------------------------+-----------------------------------------------------+-------------------------------------------------------------------------------------------------------|
+| ~notmuch-notify-alert-profiles~              | (see below)                                         | Alert profiles. Customize different notifications for different emails.                               |
+| ~notmuch-notify-alert-default-severity~      | ~'normal~                                           | Available values: ~'trivial~, ~'low~, ~'normal~, ~'moderate~, ~'high~, ~'urgent~. See [[https://github.com/jwiegley/alert][jwiegley/alert]]. |
+| ~notmuch-notify-alert-default-title~         | ~"Notmuch: new message"~                            | Notification title.                                                                                   |
+| ~notmuch-notify-alert-default-icon~          | ~notmuch-logo.png~ (Notmuch official logo)          | Notification icon.                                                                                    |
+| ~notmuch-notify-alert-default-audio~         | ~emailreceived.wav~ (Robot voice: "email received") | Notification audio.                                                                                   |
+| ~notmuch-notify-alert-default-audio-program~ | ~"mpv"~                                             | Program to play notification audio.                                                                   |
+| ~notmuch-notify-excluded-tags~               | nil                                                 | List of notmuch tags to exclude unconditionally from any notification.                                |
+| ~notmuch-notify-refresh-interval~            | ~60~ (seconds)                                      | Time between two email checks.                                                                        |
+|----------------------------------------------+-----------------------------------------------------+-------------------------------------------------------------------------------------------------------|
+   
+** TODO Examples
 ** Todo
-- Allow different severity/logo/sound for different tag/address/content.
-- Display new email title in the alert.
+- Support actions for some profiles: e.g. repeat notification <x> times during
+  <interval> until the email being read etc.
 
 ** Contribution
 Issues and PRs are welcomed.
