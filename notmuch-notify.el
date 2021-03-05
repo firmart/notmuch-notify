@@ -216,10 +216,17 @@ Useful to prevent being disturbed by active mailing list."
   (notmuch-notify--init-hash-table)
   (puthash key new-count notmuch-notify--hash-table))
 
+(defun notmuch-notify--build-sender-name (from)
+  "Build the sender name from the FROM property of notmuch header."
+  (replace-regexp-in-string "\\(.*?\\)\s *<.*>.*" "\\1" from))
+
 (defun notmuch-notify--build-message (new-email-count search-term)
   "Build an alert message based on NEW-EMAIL-COUNT and a notmuch SEARCH-TERM."
   (let* ((headers (seq-take (notmuch-notify--query-headers search-term) new-email-count))
-	 (subjects (mapcar (lambda (header) (plist-get header :Subject)) headers)))
+	 (subjects (mapcar (lambda (header)
+			     (format "(%s) %s" (notmuch-notify--build-sender-name (plist-get header :From))
+				     (plist-get header :Subject)))
+			   headers)))
     (concat
      (format "%s new messages since last refresh\n\n" new-email-count)
      (string-join subjects "\n"))))

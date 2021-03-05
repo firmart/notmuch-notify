@@ -2,6 +2,8 @@
 
 Notification for notmuch upon new email arrival.
 
+[[file:screenshot.png]]
+
 *Features*:
 - Notification and sound effect upon new email arrival.
 - Different alerts can be customized for different emails set.
@@ -83,7 +85,6 @@ This is a table of customizable variable, their default value and description.
 - Support actions for some profiles: e.g. repeat notification <x> times during
   <interval> until the email being read etc.
 - Make some data persistent in the disk to notify new emails during emacs down.
-- Display nicely sender name
 
 ** Contribution
 Issues and PRs are welcomed.
