@@ -59,7 +59,7 @@ checking interval to 10 seconds. Finally, it sets two alert profiles:
     :title "Notmuch inbox:"
     :icon ,(expand-file-name "img/inbox.jpg" user-emacs-directory)
     :audio ,(expand-file-name "audio/inbox.mp3" user-emacs-directory))
-   (:name "default"))) 
+   (:name "default")))
 #+end_src
 
 ** Default configuration
@@ -68,17 +68,17 @@ This is a table of customizable variable, their default value and description.
 |----------------------------------------------+-----------------------------------------------------+-------------------------------------------------------------------------------------------------------|
 | Variable                                     | Default value                                       | Note                                                                                                  |
 |----------------------------------------------+-----------------------------------------------------+-------------------------------------------------------------------------------------------------------|
-| ~notmuch-notify-alert-profiles~              | (see above)                                         | Alert profiles. Customize different notifications for different emails.                               |
-| ~notmuch-notify-alert-default-severity~      | ='normal=                                           | Available values: ='trivial=, ='low=, ='normal=, ='moderate=, ='high=, ='urgent=. See [[https://github.com/jwiegley/alert][jwiegley/alert]]. |
+| ~notmuch-notify-alert-profiles~              | (see =C-h v notmuch-notify-alert-profiles=)         | Alert profiles. Customize different notifications for different emails.                               |
+| ~notmuch-notify-alert-default-severity~      | ~'normal~                                           | Available values: ='trivial=, ='low=, ='normal=, ='moderate=, ='high=, ='urgent=. See [[https://github.com/jwiegley/alert][jwiegley/alert]]. |
 | ~notmuch-notify-alert-default-title~         | ="Notmuch: new message"=                            | Notification title.                                                                                   |
 | ~notmuch-notify-alert-default-icon~          | ~notmuch-logo.png~ (Notmuch official logo)          | Notification icon.                                                                                    |
 | ~notmuch-notify-alert-default-audio~         | ~emailreceived.wav~ (Robot voice: "email received") | Notification audio.                                                                                   |
-| ~notmuch-notify-alert-default-audio-program~ | ="mpv"=                                             | Program to play notification audio.                                                                   |
+| ~notmuch-notify-alert-default-audio-program~ | ~"mpv"~                                             | Program to play notification audio.                                                                   |
 |----------------------------------------------+-----------------------------------------------------+-------------------------------------------------------------------------------------------------------|
 | ~notmuch-notify-excluded-tags~               | =nil=                                               | List of notmuch tags to exclude unconditionally from any notification.                                |
 | ~notmuch-notify-refresh-interval~            | ~60~ (seconds)                                      | Interval between two check of unread messages.                                                        |
 |----------------------------------------------+-----------------------------------------------------+-------------------------------------------------------------------------------------------------------|
-   
+
 ** Todo
 - Support actions for some profiles: e.g. repeat notification <x> times during
   <interval> until the email being read etc.
