@@ -77,8 +77,8 @@ This is a table of customizable variable, their default value and description.
 | ~notmuch-notify-alert-default-audio~         | string: ~emailreceived.wav~ (Robot voice: "email received") | Notification audio.                                                                              |
 | ~notmuch-notify-alert-default-audio-program~ | string: =mpv=                                               | Program to play notification audio.                                                              |
 |----------------------------------------------+-------------------------------------------------------------+--------------------------------------------------------------------------------------------------|
-| ~notmuch-notify-excluded-tags~               | =nil=                                                       | List of notmuch tags to exclude unconditionally from any notification.                           |
-| ~notmuch-notify-refresh-interval~            | ~60~ (seconds)                                              | Interval between two check of unread messages.                                                   |
+| ~notmuch-notify-excluded-tags~               | string list:  =nil=                                        | List of notmuch tags to exclude unconditionally from any notification.                           |
+| ~notmuch-notify-refresh-interval~            | number: ~60~ (seconds)                                      | Interval between two check of unread messages.                                                   |
 |----------------------------------------------+-------------------------------------------------------------+--------------------------------------------------------------------------------------------------|
 
 ** Todo
