@@ -4,8 +4,8 @@ Notification for notmuch upon new email arrival.
 
 *Features*:
 - Notification and sound effect upon new email arrival.
-- Message about the change of the number of messages whenever =notmuch-hello= is
-  refreshed.
+- Different alerts can be customized for different emails set.
+- Message on the the number of messages whenever =notmuch-hello= is refreshed.
 
 ** Installation & Minimal Configuration
 The following configuration relies on [[https://github.com/quelpa/quelpa-use-package][quelpa-use-package]], but it is
@@ -25,25 +25,65 @@ Below is a minimal configuration. Keep reading for more customizations.
   (notmuch-notify-set-refresh-timer))
 #+end_src
 
-** Default Configuration
+** Define multiple alert profiles
 
+An important feature of =notmuch-notify= is that it allows you to define
+severity, title, icon or audio per emails basis. This is done by configuring the
+variable ~notmuch-notify-alert-profiles~ which defines a list of alert
+profiles. An alert profile is a property list with the properties =:name=,
+=:search-term=, =:severity=, =:title=, =:icon= and =:audio=. The value of the
+last four, if missed, will fall back to their corresponding variable
+=notmuch-notify-alert-default-*=.  Whereas the =:name= is merely for debugging
+purpose, the role of =:search-term= is central. It takes a notmuch [[https://notmuchmail.org/manpages/notmuch-search-terms-7/][search term]]
+to specify on which emails set the notification will be performed.
+
+** Example
+
+Here is an example of further customization. It firstly excludes all emails
+having the notmuch tags =Org-Mode= and =FromMe=. It then reduces the email
+checking interval to 10 seconds. Finally, it sets two alert profiles:
+1. The =inbox= profile will match all emails tagged as =inbox= (but not those
+   tagged as =Org-Mode= and =FromMe=), will change the title to =Notmuch inbox:=
+   and change the icon and audio accordingly.
+2. The =default= profile will match any email which is not tagged as =inbox=,
+   =Org-Mode= or =FromMe=. Its =:severity=, =:title=, =:icon= and =:audio= are
+   the default ones (see below).
+
+#+begin_src emacs-lisp
+(setq notmuch-notify-excluded-tags '("Org-Mode" "FromMe"))
+(setq notmuch-notify-refresh-interval 10)
+(setq notmuch-notify-alert-profiles
+ `((:name "inbox"
+    :search-term "tag:inbox"
+    :severity urgent
+    :title "Notmuch inbox:"
+    :icon ,(expand-file-name "img/inbox.jpg" user-emacs-directory)
+    :audio ,(expand-file-name "audio/inbox.mp3" user-emacs-directory))
+   (:name "default"))) 
+#+end_src
+
+** Default configuration
+
+This is a table of customizable variable, their default value and description.
 |----------------------------------------------+-----------------------------------------------------+-------------------------------------------------------------------------------------------------------|
 | Variable                                     | Default value                                       | Note                                                                                                  |
 |----------------------------------------------+-----------------------------------------------------+-------------------------------------------------------------------------------------------------------|
-| ~notmuch-notify-alert-profiles~              | (see below)                                         | Alert profiles. Customize different notifications for different emails.                               |
-| ~notmuch-notify-alert-default-severity~      | ~'normal~                                           | Available values: ~'trivial~, ~'low~, ~'normal~, ~'moderate~, ~'high~, ~'urgent~. See [[https://github.com/jwiegley/alert][jwiegley/alert]]. |
-| ~notmuch-notify-alert-default-title~         | ~"Notmuch: new message"~                            | Notification title.                                                                                   |
+| ~notmuch-notify-alert-profiles~              | (see above)                                         | Alert profiles. Customize different notifications for different emails.                               |
+| ~notmuch-notify-alert-default-severity~      | ='normal=                                           | Available values: ='trivial=, ='low=, ='normal=, ='moderate=, ='high=, ='urgent=. See [[https://github.com/jwiegley/alert][jwiegley/alert]]. |
+| ~notmuch-notify-alert-default-title~         | ="Notmuch: new message"=                            | Notification title.                                                                                   |
 | ~notmuch-notify-alert-default-icon~          | ~notmuch-logo.png~ (Notmuch official logo)          | Notification icon.                                                                                    |
 | ~notmuch-notify-alert-default-audio~         | ~emailreceived.wav~ (Robot voice: "email received") | Notification audio.                                                                                   |
-| ~notmuch-notify-alert-default-audio-program~ | ~"mpv"~                                             | Program to play notification audio.                                                                   |
-| ~notmuch-notify-excluded-tags~               | nil                                                 | List of notmuch tags to exclude unconditionally from any notification.                                |
-| ~notmuch-notify-refresh-interval~            | ~60~ (seconds)                                      | Time between two email checks.                                                                        |
+| ~notmuch-notify-alert-default-audio-program~ | ="mpv"=                                             | Program to play notification audio.                                                                   |
+|----------------------------------------------+-----------------------------------------------------+-------------------------------------------------------------------------------------------------------|
+| ~notmuch-notify-excluded-tags~               | =nil=                                               | List of notmuch tags to exclude unconditionally from any notification.                                |
+| ~notmuch-notify-refresh-interval~            | ~60~ (seconds)                                      | Interval between two check of unread messages.                                                        |
 |----------------------------------------------+-----------------------------------------------------+-------------------------------------------------------------------------------------------------------|
    
-** TODO Examples
 ** Todo
 - Support actions for some profiles: e.g. repeat notification <x> times during
   <interval> until the email being read etc.
+- Make some data persistent in the disk to notify new emails during emacs down.
+- Display nicely sender name
 
 ** Contribution
 Issues and PRs are welcomed.
