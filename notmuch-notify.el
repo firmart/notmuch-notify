@@ -26,7 +26,7 @@
 (require 'notmuch)
 (require 'alert)
 (require 'seq)
-(require 'cl-loop)
+(require 'cl)
 
 ;;; Commentary:
 
