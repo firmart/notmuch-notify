@@ -250,22 +250,23 @@ for an email matching two different notmuch search terms."
 	 (search-term (notmuch-notify--build-search-term
 		       (plist-get profile :search-term)
 		       notmuch-notify-excluded-tags excluded-search-terms))
+	 (lb-search-term (notmuch-notify--build-search-term
+			  search-term nil nil
+			  ;; Lower bound search term, as "notmuch show" required,
+			  ;; date:@<ts-current - refresh-interval - 10m>..<ts-current>
+			  ;; to fetch enough messages but not too much.
+			  (- (string-to-number (format-time-string "%s" (current-time)))
+			     (+ notmuch-notify-refresh-interval 600))))
 	 (old-count (or (gethash search-term notmuch-notify--hash-table) 0))
 	 (new-count (notmuch-notify--count search-term))
 	 (diff-count (- new-count old-count))
-	 (msg (notmuch-notify--build-message
-	       diff-count
-	       (notmuch-notify--build-search-term
-		search-term nil nil
-		;; Lower bound search term, as notmuch show required,
-		;; date:@<ts-current - refresh-interval - 10m>..<ts-current>
-		;; to fetch enough messages but not too much.
-		(- (string-to-number (format-time-string "%s" (current-time)))
-		   (+ notmuch-notify-refresh-interval 600)))))
+	 (msg (notmuch-notify--build-message diff-count lb-search-term))
 	 (ready (and (not (= old-count 0)) ;; already initialized
 		     (> diff-count 0))))
-
     (when ready
+      (notmuch-notify--log 'info (format "Profile %s with search-term %s sent alert."
+					 (plist-get profile :name) lb-search-term))
+      (notmuch-notify--log 'info (format "old count=%s, new count=%s and message=%s" old-count new-count msg))
       (alert msg
 	     :severity (or (plist-get profile :severity) notmuch-notify-alert-default-severity)
 	     :title (or (plist-get profile :title) notmuch-notify-alert-default-title)
@@ -294,7 +295,11 @@ for an email matching two different notmuch search terms."
 
     ;; Move nil-search-term profile to the end
     (dolist (profile (append other-profiles nil-st-profiles))
-      (notmuch-notify-send-alert-profile profile acc-exclude-sts)
+      (condition-case e
+	  (notmuch-notify-send-alert-profile profile acc-exclude-sts)
+	(error (notmuch-notify--log
+		'error (format "Profile %s: %s" (plist-get profile :name)
+			       (error-message-string e)))))
       ;; Accumulate search terms and exclude them to have mutually exclusive messages sets
       (push (plist-get profile :search-term) acc-exclude-sts))))
 
@@ -323,6 +328,27 @@ for an email matching two different notmuch search terms."
 	 (message "notmuch-notify canceled timer %s." notmuch-notify--timer)
 	 (cancel-timer notmuch-notify--timer)
 	 (setq notmuch-notify--timer nil))))
+
+;;; Debugging
+
+(defvar notmuch-notify--log-buffer "*notmuch-notify log*")
+(defvar notmuch-notify--debug nil)
+(defvar notmuch-notify--severity-level 'error)
+
+(defun notmuch-notify--severity-level-<= (level1 level2)
+  "Compare severity LEVEL1 and LEVEL2. 'info < 'error."
+  (let ((llist '(info error)))
+    (<= (cl-position level1 llist)
+	(cl-position level2 llist))))
+
+(defun notmuch-notify--log (level msg)
+  "Log into buffer `notmuch-notify--log-buffer' MSG as LEVEL."
+  (when (and notmuch-notify--debug
+	     (notmuch-notify--level-<= notmuch-notify--severity-level level))
+    (save-excursion
+      (with-current-buffer (get-buffer-create notmuch-notify--log-buffer)
+	(goto-char (point-max))
+	(insert (format "[%s][%s] %s\n" (format-time-string "%H:%M:%S" (current-time)) level msg))))))
 
 (provide 'notmuch-notify)
 ;;; notmuch-notify ends here
