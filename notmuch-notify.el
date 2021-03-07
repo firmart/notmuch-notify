@@ -26,6 +26,7 @@
 (require 'notmuch)
 (require 'alert)
 (require 'seq)
+(require 'cl-loop)
 
 ;;; Commentary:
 
@@ -220,9 +221,16 @@ Useful to prevent being disturbed by active mailing list."
   "Build the sender name from the FROM property of notmuch header."
   (replace-regexp-in-string "\\(.*?\\)\s *<.*>.*" "\\1" from))
 
+(defun notmuch-notify--convert-header-date-to-ts (header)
+  "Convert notmuch HEADER date (RFC 822) into Unix timestamp."
+  (time-convert (encode-time (parse-time-string (plist-get header :Date))) 'integer))
+
 (defun notmuch-notify--build-message (new-email-count search-term)
   "Build an alert message based on NEW-EMAIL-COUNT and a notmuch SEARCH-TERM."
-  (let* ((headers (seq-take (notmuch-notify--query-headers search-term) new-email-count))
+  (let* ((headers (seq-take (cl-sort
+			     (notmuch-notify--query-headers search-term) #'>
+			     :key #'notmuch-notify--convert-header-date-to-ts)
+			    new-email-count))
 	 (subjects (mapcar (lambda (header)
 			     (format "(%s) %s" (notmuch-notify--build-sender-name (plist-get header :From))
 				     (plist-get header :Subject)))
