@@ -154,7 +154,8 @@ Useful to prevent being disturbed by active mailing list."
 
 (defun notmuch-notify-hello-refresh-status-message ()
   "Show the number of new mails after refreshing `notmuch-hello' buffer."
-  (let* ((old-count (or (gethash nil notmuch-notify--hash-table) 0))
+  (let* ((old-count (and (or notmuch-notify--hash-table (notmuch-notify--init-hash-table))
+			 (or (gethash nil notmuch-notify--hash-table) 0)))
 	 (new-count (notmuch-notify--count))
 	 (diff-count (- new-count old-count)))
     (cond
